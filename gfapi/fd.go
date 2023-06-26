@@ -29,24 +29,6 @@ func (fd *Fd) Fchmod(mode uint32) error {
 	return err
 }
 
-// Fchown changes the uid and gid of the Fd
-//
-// Returns error on failure
-func (fd *Fd) Fchown(uid, gid uint32) error {
-	_, err := C.glfs_fchown(fd.fd, C.uid_t(uid), C.gid_t(gid))
-
-	return err
-}
-
-// Futimens changes the atime and mtime of the Fd
-//
-// Returns error on failure
-func (fd *Fd) Futimens(times [2]C.timespec) error {
-	_, err := C.glfs_futimens(fd.fd, times)
-
-	return err
-}
-
 // Fstat performs an fstat call on the Fd and saves stat details in the passed stat structure
 //
 // Returns error on failure

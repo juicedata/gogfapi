@@ -11,7 +11,6 @@ package gfapi
 // #cgo pkg-config: glusterfs-api
 // #include "glusterfs/api/glfs.h"
 // #include <stdlib.h>
-// #include <time.h>
 // #include <sys/stat.h>
 import "C"
 import (
@@ -20,7 +19,6 @@ import (
 	"os"
 	"path"
 	"syscall"
-	"time"
 	"unsafe"
 )
 
@@ -83,10 +81,10 @@ func (v *Volume) InitWithVolfile(volname, volfile string) int {
 // Mount establishes a 'virtual mount.' Mount must be called after Init and
 // before storage operations. Steps taken:
 //
-//   - Spawn a poll-loop thread.
-//   - Establish connection to management daemon (volfile server) and receive volume specification (volfile).
-//   - Construct translator graph and initialize graph.
-//   - Wait for initialization (connecting to all bricks) to complete.
+//  - Spawn a poll-loop thread.
+//  - Establish connection to management daemon (volfile server) and receive volume specification (volfile).
+//  - Construct translator graph and initialize graph.
+//  - Wait for initialization (connecting to all bricks) to complete.
 //
 // Source: glfs.h
 func (v *Volume) Mount() error {
@@ -161,33 +159,6 @@ func (v *Volume) Chmod(name string, mode os.FileMode) error {
 	defer C.free(unsafe.Pointer(cname))
 
 	_, err := C.glfs_chmod(v.fs, cname, C.mode_t(posixMode(mode)))
-
-	return err
-}
-
-// Chmod changes the uid, gid of the named file
-//
-// Returns an error on failure
-func (v *Volume) Chown(name string, uid, gid int) error {
-	cname := C.CString(name)
-	defer C.free(unsafe.Pointer(cname))
-
-	_, err := C.glfs_chmod(v.fs, cname, C.uid_t(uid), C.gid_t(gid))
-
-	return err
-}
-
-// Chmod changes the mtime of the named file
-//
-// Returns an error on failure
-func (v *Volume) Chtimes(name string, mtime time.Time) error {
-	cname := C.CString(name)
-	defer C.free(unsafe.Pointer(cname))
-
-	var amtime [2]C.timespec
-	amtime[1].tv_sec = mtime.Unix()
-	amtime[1].tv_nsec = mtime.Nanosecond()
-	_, err := C.glfs_utimens(v.fs, cname, amtime)
 
 	return err
 }
@@ -405,12 +376,11 @@ func (v *Volume) Stat(name string) (os.FileInfo, error) {
 
 // Truncate changes the size of the named file
 //
-// # Returns an error on failure
+// Returns an error on failure
 //
 // TODO: gfapi currently (20131120) has not implement glfs_truncate.
-//
-//	Once it has been implemented, renable the commented out code
-//	or write own function to implement the functionality of glfs_truncate
+//       Once it has been implemented, renable the commented out code
+//       or write own function to implement the functionality of glfs_truncate
 func (v *Volume) Truncate(name string, size int64) error {
 	// cname := C.CString(name)
 	// defer C.free(unsafe.Pointer(cname))

@@ -12,7 +12,6 @@ import (
 	"io"
 	"os"
 	"syscall"
-	"time"
 )
 
 // File is the gluster file object.
@@ -56,14 +55,7 @@ func (f *File) Chmod(mode os.FileMode) error {
 
 // Chown has not been implemented yet
 func (f *File) Chown(uid, gid int) error {
-	return f.Fd.Fchown(uint32(uid), uint32(gid))
-}
-
-func (f *File) Futimens(atime, mtime time.Time) error {
-	var times [2]C.timespec
-	times[1].tv_sec = mtime.Unix()
-	times[1].tv_nsec = mtime.Nanosecond()
-	return f.Fd.Futimens(times)
+	return errors.New("Chown has not been implemented yet")
 }
 
 // Name returns the name of the opened file
