@@ -83,8 +83,12 @@ func (f *File) Read(b []byte) (n int, err error) {
 // ReadAt reads atmost len(b) bytes into b starting from offset off
 //
 // Returns number of bytes read and an error if any
-func (f *File) ReadAt(b []byte, off int64) (int, error) {
-	return f.Fd.Pread(b, off)
+func (f *File) ReadAt(b []byte, off int64) (n int, err error) {
+	n, err = f.Fd.Pread(b, off)
+	if n == 0 && len(b) > 0 && err == nil {
+		err = io.EOF
+	}
+	return
 }
 
 // Readdir returns the information of files in a directory.
