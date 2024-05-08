@@ -7,6 +7,7 @@ package gfapi
 // #include <stdlib.h>
 // #include <sys/stat.h>
 import "C"
+
 import (
 	"os"
 	"syscall"
@@ -41,8 +42,8 @@ func (fd *Fd) Fchown(uid, gid uint32) error {
 // Futimens changes the atime and mtime of the Fd
 //
 // Returns error on failure
-func (fd *Fd) Futimens(times [2]C.timespec) error {
-	_, err := C.glfs_futimens(fd.fd, times)
+func (fd *Fd) Futimens(times [2]C.struct_timespec) error {
+	_, err := C.glfs_futimens(fd.fd, &times[0])
 
 	return err
 }
@@ -51,7 +52,6 @@ func (fd *Fd) Futimens(times [2]C.timespec) error {
 //
 // Returns error on failure
 func (fd *Fd) Fstat(stat *syscall.Stat_t) error {
-
 	ret, err := C.glfs_fstat(fd.fd, (*C.struct_stat)(unsafe.Pointer(stat)))
 	if int(ret) < 0 {
 		return err
@@ -230,12 +230,13 @@ func direntName(dirent *syscall.Dirent) string {
 // then all the items will be returned.
 func (fd *Fd) Readdir(n int) ([]os.FileInfo, error) {
 	var (
-		stat  syscall.Stat_t
 		files []os.FileInfo
-		statP = (*C.struct_stat)(unsafe.Pointer(&stat))
 	)
 
 	for i := 0; n == 0 || i < n; i++ {
+		var stat syscall.Stat_t
+		var statP = (*C.struct_stat)(unsafe.Pointer(&stat))
+
 		d, err := C.glfs_readdirplus(fd.fd, statP)
 		if err != nil {
 			return nil, err

@@ -4,7 +4,7 @@ package gfapi
 // for more information please 'api/src/glfs.h' in the glusterfs source.
 
 //go:generate sh -c "go tool cgo -godefs types_unix.go | gofmt > ztypes_${GOOS}_${GOARCH}.go"
-//TODO: Need to run `go generate` on different platforms to generate relevant ztypes file for each
+// TODO: Need to run `go generate` on different platforms to generate relevant ztypes file for each
 // - *BSD
 // - Mac OS X
 
@@ -14,6 +14,7 @@ package gfapi
 // #include <time.h>
 // #include <sys/stat.h>
 import "C"
+
 import (
 	"errors"
 	"fmt"
@@ -172,7 +173,7 @@ func (v *Volume) Chown(name string, uid, gid int) error {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
-	_, err := C.glfs_chmod(v.fs, cname, C.uid_t(uid), C.gid_t(gid))
+	_, err := C.glfs_chown(v.fs, cname, C.uid_t(uid), C.gid_t(gid))
 
 	return err
 }
@@ -184,10 +185,9 @@ func (v *Volume) Chtimes(name string, mtime time.Time) error {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
-	var amtime [2]C.timespec
-	amtime[1].tv_sec = mtime.Unix()
-	amtime[1].tv_nsec = mtime.Nanosecond()
-	_, err := C.glfs_utimens(v.fs, cname, amtime)
+	var amtime [2]C.struct_timespec
+	amtime[1] = C.struct_timespec{tv_sec: C.long(mtime.Unix()), tv_nsec: C.long(mtime.Nanosecond())}
+	_, err := C.glfs_utimens(v.fs, cname, &amtime[0])
 
 	return err
 }

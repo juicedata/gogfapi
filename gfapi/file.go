@@ -7,6 +7,7 @@ package gfapi
 // #include <stdlib.h>
 // #include <sys/stat.h>
 import "C"
+
 import (
 	"errors"
 	"io"
@@ -60,9 +61,9 @@ func (f *File) Chown(uid, gid int) error {
 }
 
 func (f *File) Futimens(atime, mtime time.Time) error {
-	var times [2]C.timespec
-	times[1].tv_sec = mtime.Unix()
-	times[1].tv_nsec = mtime.Nanosecond()
+	var times [2]C.struct_timespec
+	times[0] = C.struct_timespec{tv_sec: C.long(atime.Unix()), tv_nsec: C.long(atime.Nanosecond())}
+	times[1] = C.struct_timespec{tv_sec: C.long(mtime.Unix()), tv_nsec: C.long(mtime.Nanosecond())}
 	return f.Fd.Futimens(times)
 }
 
