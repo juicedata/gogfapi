@@ -81,10 +81,10 @@ func (v *Volume) InitWithVolfile(volname, volfile string) int {
 // Mount establishes a 'virtual mount.' Mount must be called after Init and
 // before storage operations. Steps taken:
 //
-//  - Spawn a poll-loop thread.
-//  - Establish connection to management daemon (volfile server) and receive volume specification (volfile).
-//  - Construct translator graph and initialize graph.
-//  - Wait for initialization (connecting to all bricks) to complete.
+//   - Spawn a poll-loop thread.
+//   - Establish connection to management daemon (volfile server) and receive volume specification (volfile).
+//   - Construct translator graph and initialize graph.
+//   - Wait for initialization (connecting to all bricks) to complete.
 //
 // Source: glfs.h
 func (v *Volume) Mount() error {
@@ -299,6 +299,7 @@ func (v *Volume) MkdirAll(path string, perm os.FileMode) error {
 // name is the name of the file to be open.
 //
 // Returns a File object on success and a os.PathError on failure.
+// BUG: Open does not support opening directories for gfapi version >= v10.3. Use OpenDir instead.
 func (v *Volume) Open(name string) (*File, error) {
 	isDir := false
 
@@ -318,6 +319,19 @@ func (v *Volume) Open(name string) (*File, error) {
 	}
 
 	return &File{name, Fd{cfd}, isDir}, nil
+}
+
+// OpenDir opens the named directory on the the Volume v.
+func (v *Volume) OpenDir(name string) (*File, error) {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
+	cfd, err := C.glfs_opendir(v.fs, cname)
+	if cfd == nil {
+		return nil, &os.PathError{"opendir", name, err}
+	}
+
+	return &File{name, Fd{cfd}, true}, nil
 }
 
 // OpenFile opens the named file on the the Volume v.
@@ -376,11 +390,12 @@ func (v *Volume) Stat(name string) (os.FileInfo, error) {
 
 // Truncate changes the size of the named file
 //
-// Returns an error on failure
+// # Returns an error on failure
 //
 // TODO: gfapi currently (20131120) has not implement glfs_truncate.
-//       Once it has been implemented, renable the commented out code
-//       or write own function to implement the functionality of glfs_truncate
+//
+//	Once it has been implemented, renable the commented out code
+//	or write own function to implement the functionality of glfs_truncate
 func (v *Volume) Truncate(name string, size int64) error {
 	// cname := C.CString(name)
 	// defer C.free(unsafe.Pointer(cname))
